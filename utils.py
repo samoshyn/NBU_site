@@ -3,22 +3,17 @@ from print_func import *
 from ts_model import *
 
 def intro():
-    select = st.sidebar.selectbox("Вибір розділу", ["Про задачу", "Про команду", "Огляд літератури"])
+    select = st.sidebar.selectbox("Вибір розділу", ["Про задачу", "Про команду"])
     if select == "Про задачу":
         task_info()
         
     elif select == "Про команду":
         print_command_review()
-    else:
-        print_litterature()
+
 
 def about_models(select_action):
 
-    # See functions
-    if select_action == "Вибрати":
-        print_choose()
-
-    elif select_action == "На економічних параметрах":
+    if select_action == "На економічних параметрах":
         print_about_economic_features_model()
 
     elif select_action == "Часові ряди":
@@ -31,6 +26,10 @@ def models():
         
     elif select == "Інтерпретація моделі":
         select_interp()
+
+def select_info_model():
+    about_col()
+    steps_work()
         
 def select_predict():
     intro_model()
