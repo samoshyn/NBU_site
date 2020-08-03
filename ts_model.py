@@ -29,6 +29,11 @@ def download_data_usd():
 
 def download_data_economic():
     data = pd.read_excel('final_data.xlsx')
+    data['date'] = pd.to_datetime(data['date'],
+                        format='%d.%m.%Y'
+                                      )
+    
+    data = data.set_index('date')
     data.drop(data.tail(1).index, inplace=True)
     
     return data
