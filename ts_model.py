@@ -56,6 +56,7 @@ def predict_plot(X_train, X_valid, preds, y_true):
                 preds+mae, color='k', alpha=.05, label='Похибка')
     axs.axhline(y=preds.mean(), linestyle='--',  color='b', label='Прознозоване середнє')
     axs.axhline(y=y_true.mean(), linestyle='--', color='g', label='Реальне середнє')
+    fig.autofmt_xdate()
     axs.legend(loc=2)
     #plt.show()
     st.pyplot()
@@ -69,7 +70,7 @@ def create_shift(s, windows=[7,8,9,10]):#,,14,20,30,50
         #cf['signal_shift_-' + str(w)] = s.shift(-1*w)
     
     for w in windows[1:]:
-        cf['rost_short'+ str(w)] = -cf[f'shift_{windows[0]}'] + cf[f'shift_{w}']
+        cf['diff_shift_'+ str(w)] = -cf[f'shift_{windows[0]}'] + cf[f'shift_{w}']
     len_rost = 0
     len_spad = 0
     rost_spad = [0] * (windows[0]+1)
@@ -82,12 +83,12 @@ def create_shift(s, windows=[7,8,9,10]):#,,14,20,30,50
             len_spad = len_spad + 1
             len_rost = 0
             rost_spad.append(len_spad)
-    cf['period_rost_spad'] = rost_spad
+    cf['period_trend'] = rost_spad
     
     value = [0] * (windows[0]+1)
     for i in range(windows[0]+1, len(s)):
         value.append(s[i] - s[i-1])
-    cf['values'] = value
+    cf['day_increase'] = value
      
     #cf['signal_power'] = s ** 2
     #cf = cf.fillna(value=0) 
@@ -123,13 +124,13 @@ def calc_roll_stats(s, windows=[3, 5, 7, 10]):#, 20,30,50
 def statictic_info(df, pr, windows=[30,50,60]):
 
     for w in windows:
-        df['window_stationarity_p_value' + str(w) + str(pr)] = [0]*len(df)
+        df['window_stationarity_' + str(w)] = [0]*len(df)
         #df['window_stationarity_critical_value_' + str(w) + str(pr)] = [0]*len(df)
         n = int(len(df)/w) + 1
         for ci in range(n-1):
             P_result = adfuller(df[f'shift_{pr}'][ci*w:(ci+1)*w])
             #print(s[ci*w:(ci+1)*w])
-            df['window_stationarity_p_value' + str(w) + str(pr)][ci*w:(ci+1)*w] = P_result[1]
+            df['window_stationarity_' + str(w)][ci*w:(ci+1)*w] = P_result[1]
             #df['window_stationarity_critical_value_' + str(w) + str(pr)][ci*w:(ci+1)*w] = P_result[0]
     return df
 
@@ -143,10 +144,11 @@ def shap_plots(model, X, y_train):
     plt.clf()
     
     st.markdown('Значення SHAP можуть також використовуватися для представлення розподілу навчального набору належного значення SHAP по відношенню до нашого прогнозу.')
-    plt.title('Загальний розподіл спостережень на основі SHAP')
-    shap.summary_plot(shap_values,X,show=False)
-    st.pyplot(bbox_inches='tight')
-    plt.clf()
+    with st.spinner('Зображуємо ілюстрацію...'):
+        plt.title('Загальний розподіл спостережень на основі SHAP')
+        shap.summary_plot(shap_values,X,show=False)
+        st.pyplot(bbox_inches='tight')
+        plt.clf()
     
     st.markdown("Слід розуміти, **чому було зроблено конкретний прогноз** відновідно до наших вхідних даних.")
     expectation = explainer.expected_value
@@ -161,9 +163,10 @@ def shap_plots(model, X, y_train):
         st.write('Це дає прогнозоване значення курсу: '+str(round(expectation,3))+' +\
                  '+str(round(sum(shap_values[individual,:]),3))+' = '+str(round(expectation+sum(shap_values[individual,:]),3))+' грн')
         st.markdown("Які функції повпливали на наш прогноз? **Червоні області збільшують прогноз, сині зменшують його.**")
-        shap.force_plot(explainer.expected_value, shap_values[individual,:], X.iloc[individual,:], matplotlib=True, show=False, figsize=(16,5))
-        st.pyplot(bbox_inches='tight',dpi=300,pad_inches=0)
-        plt.clf()
+        with st.spinner('Завантажуємо графіку...'):
+            shap.force_plot(np.around(explainer.expected_value, decimals=2), np.around(shap_values[individual,:], decimals = 2), np.around(X.iloc[individual,:], decimals=2), matplotlib=True, show=False, text_rotation=20)
+            st.pyplot(bbox_inches='tight',dpi=300,pad_inches=0)
+            plt.clf()
         
         st.markdown("На графіку вище показані значення функцій. Значення SHAP представлені довжиною конкретної смуги. Однак, не зовсім зрозуміло, яке саме значення кожного SHAP _(це можна побачити нижче, якщо потрібно)_:")
         #agree = st.button('Переглянути всі значення SHAP')
