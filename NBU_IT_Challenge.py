@@ -4,6 +4,20 @@ import pandas as pd
 from print_func import *
 from utils import *
 
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+hide_footer_style = """
+    <style>
+    .reportview-container .main footer {visibility: hidden;}    
+    """
+st.markdown(hide_footer_style, unsafe_allow_html=True) 
+
 def main():
     st.sidebar.title("Що бажаєте переглянути:")
     app_mode = st.sidebar.radio("Перейти до", ["Вступ", "Підходи до вирішення задачі",
@@ -15,7 +29,7 @@ def main():
             
     elif app_mode == "Підходи до вирішення задачі":
         st.title("Наші підходи")
-        select_solution = st.sidebar.selectbox("Оберіть розділ", ["Вибрати", "На економічних параметрах", 
+        select_solution = st.sidebar.selectbox("Оберіть розділ", ["На економічних параметрах", 
                                                                 "Часові ряди"])
         about_models(select_solution)
         
