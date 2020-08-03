@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf
 import plotly.graph_objects as go
 from statsmodels.tsa.stattools import adfuller
+from PIL import Image
 from ts_model import *
 
 def print_choose():
@@ -13,7 +14,7 @@ def print_choose():
 
 def print_intro():
     st.title("Вступ: коротко про головне")
-    st.info("Всі права захищені бай Китобій ")
+    st.info("Всі права захищені командою Китобій ")
     #st.subheader("Підзаголовок Підзаголовок Підзаголовок Підзаголовок ")
     
 def task_info():
@@ -49,13 +50,28 @@ def print_command_review():
                 Feature engineering, Презентація ([LinkedIn](https://www.linkedin.com/in/andriy-samoshyn-748b56163/))")
     st.markdown(":heavy_check_mark: **Мисак Юрій** - КПІ ФПМ 2 курс; Data Science, ML, Math, Пітч")
 
-def print_litterature():
-    st.title("Використана література")
-	# Література
-    st.markdown("Текст Текст Текст Текст")
-    st.markdown("Текст Текст Текст Текст")
-    st.markdown("Текст Текст Текст Текст")
+def raw_plot(data, column_name, title):
+
+    plt.plot(data.index, data[column_name], label=column_name)
+    plt.legend()
+    plt.title(title)
+    #plt.show()
+
+def fix_outliers(X, column):
     
+    learning_rate = 0.35
+    
+    q1 = X[column].quantile(0.25)
+    q3 = X[column].quantile(0.75)
+    iqr = q3-q1
+    fence_low  = q1-1.5*iqr
+    fence_high = q3+1.5*iqr
+    
+    X[column].loc[(X[column] >= fence_high)] = X[column].quantile(1-learning_rate)
+    X[column].loc[(X[column] <= fence_low)] = X[column].quantile(learning_rate)
+    
+    return X
+        
 def print_about_economic_features_model():
     st.subheader("Модель на економічних параметрах України")
     #st.title("На економічних параметрах України")
@@ -63,12 +79,43 @@ def print_about_economic_features_model():
     st.markdown("Базуючись на макроекономічних показниках країни, необхідно передбачити курс валют на найближчий час. \
                 В даному випадку використовувалась система градієнтного підсилення.")
     data = download_data_economic()
-    st.dataframe(data.tail(5))
-    st.markdown("Ці дані сповна характеризують економічну ситуацію в Україні, але мають **ряд суттєвих недоліків**, через \
-                які нам довелося змінити підхід до задачі:\n - Більшість параметрів розраховуються щомісячно або щоквартально, а наша ціль, курс валют, щоденно. Будь-які \
-                    види інтерполяції не зможуть повноцінно відобразити тренди параметрів на кожен день\n - На жаль, економічна ситуація у країні не є досить стабільною через що виникає багато аномальних значень, \
-                    які будуть заважати роботі моделей. Ми не можемо їх уникнути, тому что це реальні показники\n")
-    st.markdown("**Як результат**, маємо набір даних, який складно якісно математично інтерпретувати на кожен день та який містить \
+    st.dataframe(data.tail(10))
+    st.markdown("Ці дані сповна характеризують економічну ситуацію в Україні, але мають **ряд суттєвих недоліків для навчання (про це пізніше).**")
+    st.markdown("**Побудова моделі складається з наступних етапів**:\n - Підготовка даних (preprocessing)\n - Робота з колонками (feature engineering)\n - Налаштування моделі (modelling)")
+    
+    st.subheader("Підготовка даних")
+    st.markdown("Вся робота проходила із середнім місячним курсом, адже усі залежні показники вимірюються кожного місяця/квартала/року.")
+    st.markdown("Використовували **лінійну інтерполяцію** для заповнення пропущених даних, що вимірюються не щомісячно.")
+    st.markdown("Часовий проміжок для роботи з моделлю: **з 2015 по 2020 рік**, на якому і застосовувались методи оцінок для розуміння точності кожної моделі.")
+    
+    st.subheader("Робота з колонками")
+    st.markdown("У вибірках деяких параметрів були наявні **викиди** (значення, які виділяються із загальної вибірки), що негативно впливають на роботу моделі. Вони виявлені та ліквідовані за допомогою **методу міжквартильного розмаху**.")
+    raw_plot(data, 'ppi', 'До опрацювання даних')
+    st.pyplot()
+    data = fix_outliers(data, 'ppi')
+    raw_plot(data, 'ppi', 'Після опрацювання даних')
+    st.pyplot()
+    st.markdown("Були додані “запізнення” для усіх колонок на 1,2,3,6 та 12 місяців. Детальніше щодо “запізнення” розкажемо в розділі про часові ряди.")
+    st.markdown("**Вибір колонок, що дають найкращий результат.** Використали власноруч створену функцію по відбору найкорисніших колонок для моделювання, адже бустингова модель чутлива до колонок, що знаходяться в датасеті.")
+    #картинка
+    image1 = Image.open('diagram.png')
+    st.image(image1,use_column_width=True)
+    st.markdown("Валідація проводилась на основі **TimeSeriesSplit** із бібліотеки sklearn, щоб перевірити як модель себе показує на всьому датасеті. На діаграмі проілюстрований принцип розбиття на тренуальну та тестову частини.")
+    image2 = Image.open('ts_split.png')
+    st.image(image2,use_column_width=True)
+    st.subheader("Налаштування моделі")
+    st.markdown("Обрана **модель на основі бустингу XGBoost**. Також перевірялися наступні моделі: LightGBM, CatBoost, RandomForests, KNN та інші. Після вибору моделі, підбирали найкращі параметри моделі на основі кросс-валідації.")
+    st.markdown("**Остаточний вигляд моделі наступний:**")
+    st.info("XGBRegressor(objective ='reg:squarederror', learning_rate=0.3, n_estimators=100, max_depth=9, subsample=0.9, colsample_bytree=0.7)")
+    st.markdown("де:\n - **learning_rate** - розмір кроку при корекції моделі, використовується для запобігання \
+                перенавчання\n - **n_estimators** - кількість дерев у моделі\n - **max_depth** - максимальна глибина дерева\n - **subsample** - характеризує, яку частину строк буде \
+                    використовувати модель на кожному кроці оновлення\n - **colsample_bytree** - відношення підвибірки колонок при побудові кожного дерева")
+    
+    st.subheader("Результати")
+    st.markdown("**То чому ж ми відкинули цей підхід?** Таке рішення довелося прийняти через низку проблем:\n - Більшість параметрів розраховуються щомісячно або щоквартально, а наша ціль, курс валют, щоденно. Будь-які \
+    #                види інтерполяції не змогли повноцінно відобразити тренди параметрів на кожен день\n - На жаль, економічна ситуація у країні не є досить стабільною через що виникає багато аномальних значень, \
+    #                які заважають роботі моделі. Ми могли б їх ліквідувати, однак це реальні показники країни. Якщо всі ці значення прибрати, виникне зовсім інша економічна картина.")
+    st.markdown("**Як підсумок**, маємо набір даних, який складно якісно математично інтерпретувати на кожен день та який містить \
                 досить велику кількість пропущенної інформації через алгоритми підрахунку.")
     
 def print_about_time_series_model():
@@ -100,33 +147,36 @@ def print_about_time_series_model():
     st.pyplot()
     st.markdown("Довірчі інтервали зображені у вигляді конуса. 95% довірчий інтервал дозволяє припустити, що значення кореляції поза цим конусом є кореляцією, а не статистичною величиною.")
     data_shift = pd.DataFrame()
+    fig, axs = plt.subplots(1, figsize=(6,4))
     for i in range(0, 12, 4):
         data_shift["lag_"+ str(i)] = data.shift(i)
         #print(data.head())
-        plt.plot(data_shift.loc['2019-04-01':'2019-07-01','lag_'+ str(i)], label='lag_'+ str(i))
+        axs.plot(data_shift.loc['2019-04-01':'2019-07-01','lag_'+ str(i)], label='lag_'+ str(i))
     #plt.plot(data_shift.loc['2019-04-01':'2019-07-01',:])
-    plt.legend()
-    plt.title('Приклад запізнення на 4 та 8 днів')
+    fig.autofmt_xdate()
+    axs.legend()
+    fig.suptitle('Приклад запізнення на 4 та 8 днів')
     st.pyplot()
     st.subheader("Статистики за певний період")
     st.markdown("Для того, щоб отримати більше інформації про наш часовий ряд, нам необхідно фіксувати певну статистичну інформацію на невеликих проміжках. \
                 Ми зможемо вдосконалити модель, надавши додаткові дані про ряд. \
                 _Проте не забуваємо, що необхідно підраховувати статистики саме на деякому запізненні ряду (а не на самому курсі) для того, щоб уникнути витіку даних._")
     period = data['2019-04-01':'2019-04-20']
+    fig, axs = plt.subplots(1, figsize=(6,4))
     for i in range(1, len(period)):
         if period.iloc[i]>period.iloc[i-1]:
-            plt.plot(period.iloc[i-1:i+1], color='limegreen', linewidth=3)
+            axs.plot(period.iloc[i-1:i+1], color='limegreen', linewidth=3)
         elif period.iloc[i]<period.iloc[i-1]:
-            plt.plot(period.iloc[i-1:i+1], color='tomato', linewidth=3)
+            axs.plot(period.iloc[i-1:i+1], color='tomato', linewidth=3)
         else:
-            plt.plot(period.iloc[i-1:i+1], color='grey', linewidth=3)
+            axs.plot(period.iloc[i-1:i+1], color='grey', linewidth=3)
             
-    plt.axhline(y=period.min(), linestyle='--', linewidth=0.8, color='darkorange', label='min')
-    plt.axhline(y=period.max(), linestyle='--', linewidth=0.8,color='darkorange', label='max')
-    plt.axhline(y=period.mean(), linestyle='--', color='tan', label='mean')
-
-    plt.legend()
-    plt.title('Обрані статистики для аналізу')
+    axs.axhline(y=period.min(), linestyle='--', linewidth=0.8, color='darkorange', label='min')
+    axs.axhline(y=period.max(), linestyle='--', linewidth=0.8,color='darkorange', label='max')
+    axs.axhline(y=period.mean(), linestyle='--', color='tan', label='mean')
+    fig.autofmt_xdate()
+    axs.legend()
+    fig.suptitle('Обрані статистики для аналізу')
     st.pyplot()
     st.subheader("Стаціонарність часового ряду")
     st.markdown("Якщо процес є стаціонарним, це означає, що він не змінює своїх статистичних властивостей у часі, а саме середнього значення та дисперсії. \
@@ -137,17 +187,30 @@ def print_about_time_series_model():
                 структуру)\n - **Альтернативна гіпотеза:** (відкидаючи нульову гіпотезу) часовий ряд є стаціонарним \
         \n - Ми інтерпретуємо цей результат, використовуючи **р-значення** з тесту. Значення р нижче порогового рівня 5% пропонує нам відкинути нульову гіпотезу, інакше дозволяє припустити нульову гіпотезу")
     stat_period = data['2015-05-20':'2015-06-05']
-    plt.plot(stat_period[:'2015-05-30'], color='green', linewidth=3, label=f'Dickey-Fuller p-value: {round(adfuller(stat_period[:"2015-05-30"])[1], 3)}')
-    plt.plot(stat_period['2015-05-30':], color='royalblue', linewidth=3, label=f'Dickey-Fuller p-value: {round(adfuller(stat_period["2015-05-30":])[1], 3)}')    
-    plt.axvline(pd.to_datetime('2015-05-30'), color='k', linestyle='--')
-    plt.title('Порівняння стаціонарного і нестаціонарного періодів')
-    plt.legend()
+    fig, axs = plt.subplots(1, figsize=(6,4))
+    axs.plot(stat_period[:'2015-05-30'], color='green', linewidth=3, label=f'Dickey-Fuller p-value: {round(adfuller(stat_period[:"2015-05-30"])[1], 3)}')
+    axs.plot(stat_period['2015-05-30':], color='royalblue', linewidth=3, label=f'Dickey-Fuller p-value: {round(adfuller(stat_period["2015-05-30":])[1], 3)}')    
+    axs.axvline(pd.to_datetime('2015-05-30'), color='k', linestyle='--')
+    fig.suptitle('Порівняння стаціонарного і нестаціонарного періодів')
+    fig.autofmt_xdate()
+    axs.legend(loc=1)
     st.pyplot()
     st.subheader("Вдосконалення даного методу")
     st.markdown("Для більш точного прогнозування на великі терміни (більше 14 днів), ми розробили модель із донавчанням на певних етапах. \
                 **Ідея наступна:**\n - Розбити термін на декілька коротких, на яких модель добре передбачає курс\n - Спрогнозувати на перший такий проміжок, представити ці дані як істинні та додати \
                     їх до навчальної вибірки\n - Вже на наново навченій моделі спрогнозувати наступний міні-проміжок\n - Повторити для всіх проміжків\n - З'єднати прогнози на кождій ітерації")
     st.markdown("**Як результат, зменшили похибку на великих термінах в середьному на 15 копійок.**")
+
+def about_col():
+    st.markdown("Для початку додамо деякі пояснення щодо назв змінних, що використовувалися при моделюванні:")
+    columns_info = pd.DataFrame(['запізнення часового ряду на n днів', 'мінімальне значення у вікні розміром n', 'максимальне значення у вікні розміром n', 'середнє значення у вікні розміром n',
+                                               'дисперсія у вікні розміром n', '25% квартиль у вікні розміром n', '75% квартиль у вікні розміром n', 'зміна величини часового ряду у вікні розміром n відповідно до найменшого доступного вікна',
+                                               'бінарний показник росту чи спаду найменшого відставання часового ряду', 'щоденна різниця величини мінімального запізнення часового ряду', 'p-значення перевірки гіпотези про стаціонарність часового ряду у вікні розміром n'],
+                                 index = ['shift_n', 'roll_min_n', 'roll_max_n', 'roll_mean_n',
+                                               'roll_std_n', 'roll_q25_n', 'roll_q75_n', 'diff_shift_n',
+                                               'period_trend', 'day_increase', 'window_stationarity_n'],
+                                 columns=['Опис колонки'])
+    st.table(columns_info)
     
 def intro_model():
     st.info("Цей розділ допоможе вам зробити та візуалізувати прогнози, представлені нашою моделлю. А також допоможемо інтерпретувати модель для кращого розуміння сутності всіх процесів.")
@@ -183,4 +246,5 @@ def print_res(y_true, y_pred, mae, X_test, pred_size):
     
 def intro_shap():
     st.subheader("Пояснення моделі простою мовою")
+    about_col()
     st.markdown("За допомогою **SHAP-значень** можна зрозуміти, наскільки наші дані дають той чи інший вклад у фінальний прогноз курсу. Проілюструємо це на роботі нашої моделі. **Оберіть на скільки днів зробити прогноз:**")
