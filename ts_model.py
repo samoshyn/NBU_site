@@ -140,7 +140,7 @@ def shap_plots(model, X, y_train):
     
     st.markdown("Слід розуміти, **чому було зроблено конкретний прогноз** відновідно до наших вхідних даних.")
     expectation = explainer.expected_value
-    individual = st.slider('Оберіть потрібний рядок із навчальної вибірки для детального пояснення', min_value=min(range(len(X))), max_value=max(range(len(X))))
+    individual = random.randint(min_value=min(range(len(X)))+1, max_value=max(range(len(X))))
     if individual>0:
         predicted_values = model.predict(X)
         real_value = y_train[individual]
@@ -186,11 +186,11 @@ def feature_selection_forward(train_num, y, model, size):
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
     my_table = st.table(check_df)
     train_clear = random.sample(list(train_num.columns), 11)
-    time.sleep(15)
+    time.sleep(25)
     l = random.sample(list(train_num.columns), len(train_num.columns))
     for i in l:
         t = 'Не відібрана'
-        if i in train_clear:
+        if i in list(train_clear.columns):
             t = 'Відібрана'
         upd = pd.DataFrame({'Функція': [i], 'Результат': [t]})
         upd = upd.style.applymap(true_select, subset=['Результат'])
