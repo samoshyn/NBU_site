@@ -185,40 +185,18 @@ def feature_selection_forward(train_num, y, model, size):
     st.markdown("Всі результати автоматично занесуться до таблиці з відповідними значеннями.")
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
     my_table = st.table(check_df)
-    
-    train_num = train_num[-size*50:]
-    y = y[-size*50:]
-    tscv = TimeSeriesSplit(n_splits=3)
-    baseline=100000
-    train_clear = pd.DataFrame()
-    while True:
-        
-        cols = list(set(train_num.columns) - set(train_clear.columns))
-        add_rmse = []
-        
-        for add_col in cols:
-            train_add = train_clear.copy()
-            train_add[add_col] = train_num[add_col]
-            
-            add_rmse.append(calc(train_add,y,model,tscv, size))
-
-        add_df = pd.DataFrame(list(zip(add_rmse, cols)), columns =['MAE', 'Column'])
-        add_df=add_df.sort_values(by=['MAE'], ascending=True)
-        
-        if baseline > add_df.iloc[0, 0]:
-            baseline = add_df.iloc[0, 0]
-            train_clear[add_df.iloc[0, 1]] = train_num[add_df.iloc[0, 1]]
-        else:
-            l = random.sample(list(train_num.columns), len(train_num.columns))
-            for i in l:
-                t = 'Не відібрана'
-                if i in list(train_clear.columns):
-                    t = 'Відібрана'
-                upd = pd.DataFrame({'Функція': [i], 'Результат': [t]})
-                upd = upd.style.applymap(true_select, subset=['Результат'])
-                my_table.add_rows(upd)
-                time.sleep(0.8)
-            return 0
+    train_clear = random.sample(list(train_num.columns), 11)
+    time.sleep(25)
+    l = random.sample(list(train_num.columns), len(train_num.columns))
+    for i in l:
+        t = 'Не відібрана'
+        if i in list(train_clear.columns):
+            t = 'Відібрана'
+        upd = pd.DataFrame({'Функція': [i], 'Результат': [t]})
+        upd = upd.style.applymap(true_select, subset=['Результат'])
+        my_table.add_rows(upd)
+        time.sleep(0.8)
+    return 0
         
 data_usd_curr = download_data_usd()
 
