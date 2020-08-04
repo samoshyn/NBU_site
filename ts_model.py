@@ -140,7 +140,7 @@ def shap_plots(model, X, y_train):
     
     st.markdown("Слід розуміти, **чому було зроблено конкретний прогноз** відновідно до наших вхідних даних.")
     expectation = explainer.expected_value
-    individual = random.randint(min_value=min(range(len(X)))+1, max_value=max(range(len(X))))
+    individual = random.randint(min(range(len(X)))+1, max(range(len(X))))
     if individual>0:
         predicted_values = model.predict(X)
         real_value = y_train[individual]
