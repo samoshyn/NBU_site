@@ -180,7 +180,9 @@ def true_select(s):
     
 def feature_selection_forward(train_num, y, model, size):
     
-    st.markdown("На даному етапі проподиться автоматичний відбір найкорисніших функцій для навчання. **Проводимо це із декількома цілями:**\n- спрощення моделі\n- скорочення тривалості фінального навчання\n- зменшення розмірості даних\n-покращення узагальнення шляхом зниження перенавчання.\nВсі результати автоматично занесуться до таблиці з відповідними значеннями.")
+    st.markdown("На даному етапі проподиться автоматичний відбір найкорисніших функцій для навчання. **Проводимо це із декількома цілями:**\n- спрощення моделі\n- скорочення \
+                тривалості фінального навчання\n- зменшення розмірості даних\n- покращення узагальнення шляхом зниження перенавчання.")
+    st.markdown("Всі результати автоматично занесуться до таблиці з відповідними значеннями.")
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
     my_table = st.table(check_df)
     
@@ -202,10 +204,10 @@ def feature_selection_forward(train_num, y, model, size):
 
         add_df = pd.DataFrame(list(zip(add_rmse, cols)), columns =['MAE', 'Column'])
         add_df=add_df.sort_values(by=['MAE'], ascending=True)
+        st.markdown("111")
         
         if baseline > add_df.iloc[0, 0]:
             baseline = add_df.iloc[0, 0]
-            print(add_df.iloc[0, 1])
             train_clear[add_df.iloc[0, 1]] = train_num[add_df.iloc[0, 1]]
         else:
             l = random.sample(list(train_num.columns), len(train_num.columns))
@@ -217,8 +219,7 @@ def feature_selection_forward(train_num, y, model, size):
                 upd = upd.style.applymap(true_select, subset=['Результат'])
                 my_table.add_rows(upd)
                 time.sleep(0.8)
-            break
-        
+            return 0
         
 data_usd_curr = download_data_usd()
 
