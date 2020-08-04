@@ -140,7 +140,7 @@ def shap_plots(model, X, y_train):
     
     st.markdown("Слід розуміти, **чому було зроблено конкретний прогноз** відновідно до наших вхідних даних.")
     expectation = explainer.expected_value
-    individual = random.randint(min(range(len(X)))+1, max(range(len(X))))
+    individual = random.randint(min_value=min(range(len(X)))+1, max_value=max(range(len(X))))
     if individual>0:
         predicted_values = model.predict(X)
         real_value = y_train[individual]
@@ -157,9 +157,9 @@ def shap_plots(model, X, y_train):
             plt.clf()
         
         st.markdown("На графіку вище показані значення функцій. Значення SHAP представлені довжиною конкретної смуги. Однак, не зовсім зрозуміло, яке саме значення кожного SHAP _(це можна побачити нижче, якщо потрібно)_:")
-        
-        shap_table=pd.DataFrame(shap_values,columns=X.columns)
-        st.table(shap_table.iloc[individual])
+        if st.checkbox('Переглянути всі значення SHAP'):
+            shap_table=pd.DataFrame(shap_values,columns=X.columns)
+            st.table(shap_table.iloc[individual])
 
 def calc(X,y,model,cv, pred_size):
     res=[]
@@ -190,7 +190,7 @@ def feature_selection_forward(train_num, y, model, size):
     l = random.sample(list(train_num.columns), len(train_num.columns))
     for i in l:
         t = 'Не відібрана'
-        if i in list(train_clear.columns):
+        if i in train_clear:
             t = 'Відібрана'
         upd = pd.DataFrame({'Функція': [i], 'Результат': [t]})
         upd = upd.style.applymap(true_select, subset=['Результат'])
