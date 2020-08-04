@@ -39,14 +39,14 @@ def task_info():
 def print_command_review():
     st.title("Команда Китобій")
     st.subheader("Склад команди")
-    st.markdown(":heavy_check_mark: **Цепа Олексій** - КПІ ІПСА 2 курс; Капітан, Data Science, \
+    st.markdown(":heavy_check_mark: **Цепа Олексій** – КПІ ІПСА 2 курс; Капітан, Data Science, \
                 Data Mining, Feature engineering, Пітч ([LinkedIn](https://www.linkedin.com/in/oleksii-tsepa-9435801a4/))")
-    st.markdown(":heavy_check_mark: **Самошин Андрій** - КПІ ІПСА 2 курс; Data Science, ML, \
+    st.markdown(":heavy_check_mark: **Самошин Андрій** – КПІ ІПСА 2 курс; Data Science, ML, \
                 Feature engineering, Презентація ([LinkedIn](https://www.linkedin.com/in/andriy-samoshyn-748b56163/))")
-    st.markdown(":heavy_check_mark: **Мисак Юрій** - КПІ ФПМ 2 курс; Data Science, ML, Math, Пітч")
+    st.markdown(":heavy_check_mark: **Мисак Юрій** – КПІ ФПМ 2 курс; Data Science, ML, Math, Пітч")
     st.subheader("Ментори")
     st.markdown(":heavy_check_mark: **Калиновська Людмила Григорівна** – лідер напряму автоматизації банківських операцій")
-    st.markdown(":heavy_check_mark: **Кущ Максим Сергійович** - заступник начальника управління з розробки банківських інформаційних систем НБУ")
+    st.markdown(":heavy_check_mark: **Кущ Максим Сергійович** – заступник начальника управління з розробки банківських інформаційних систем НБУ")
 def raw_plot(data, column_name, title):
 
     plt.plot(data.index, data[column_name], label=column_name)
