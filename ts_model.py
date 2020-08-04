@@ -186,8 +186,8 @@ def feature_selection_forward(train_num, y, model, size):
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
     my_table = st.table(check_df)
     
-    train_num = train_num[-size*40:]
-    y = y[-size*40:]
+    train_num = train_num[-size*50:]
+    y = y[-size*50:]
     tscv = TimeSeriesSplit(n_splits=3)
     baseline=100000
     train_clear = pd.DataFrame()
@@ -197,14 +197,13 @@ def feature_selection_forward(train_num, y, model, size):
         add_rmse = []
         
         for add_col in cols:
-            train_add=train_clear.copy()
+            train_add = train_clear.copy()
             train_add[add_col] = train_num[add_col]
             
             add_rmse.append(calc(train_add,y,model,tscv, size))
 
         add_df = pd.DataFrame(list(zip(add_rmse, cols)), columns =['MAE', 'Column'])
         add_df=add_df.sort_values(by=['MAE'], ascending=True)
-        st.markdown("111")
         
         if baseline > add_df.iloc[0, 0]:
             baseline = add_df.iloc[0, 0]
@@ -224,7 +223,7 @@ def feature_selection_forward(train_num, y, model, size):
 data_usd_curr = download_data_usd()
 
 
-def work_model(predict_size, select, sеlect_step):
+def work_model(predict_size, select, sеlect_step, fs):
     
     model = XGBRegressor(eval_metric='mae',
                              learning_rate=0.05,n_estimators=200,
@@ -249,8 +248,9 @@ def work_model(predict_size, select, sеlect_step):
         X_test = X[-predict_size:]
         y_train = y[:-predict_size]
         y_test = y[-predict_size:]
-        with st.spinner('Проводимо відбір функцій...'):
-            feature_selection_forward(X_train, y_train, model, predict_size)
+        if fs==1:
+            with st.spinner('Проводимо відбір функцій...'):
+                feature_selection_forward(X_train, y_train, model, predict_size)
 
         with st.spinner('Очікуйте результати...'):    
             X_train_valid, X_test_valid, y_train_valid, y_test_valid = train_test_split(X_train, y_train, test_size=predict_size/len(X_train), random_state=seed, shuffle=False)
@@ -282,8 +282,9 @@ def work_model(predict_size, select, sеlect_step):
         X_test = X[-predict_size:]
         y_train = y[:-predict_size]
         y_test = y[-predict_size:]
-        with st.spinner('Проводимо відбір функцій...'):
-            feature_selection_forward(X_train, y_train, model, step)
+        if fs==1:
+            with st.spinner('Проводимо відбір функцій...'):
+                feature_selection_forward(X_train, y_train, model, step)
         
         preds_full = []
         y_test_full = y_test.copy()
