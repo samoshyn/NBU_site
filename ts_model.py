@@ -163,42 +163,29 @@ def shap_plots(model, X, y_train):
 
 def calc(X,y,model,cv, pred_size):
     res=[]
-    for i, (tdx, vdx) in enumerate(cv.split(X, y)):
-        
-        X_train, X_valid, y_train, y_valid = X.iloc[tdx], X.iloc[vdx], y[tdx], y[vdx]
-        model.fit(X_train, y_train, verbose=False)   
-        preds = model.predict(X_valid)
-        mae = mean_absolute_error(y_valid, preds)
-        res.append(mae)
-    '''
-    X_train_valid, X_test_valid, y_train_valid, y_test_valid = train_test_split(X, y, test_size=5*pred_size/len(X), random_state=seed, shuffle=False)
+    X_train_valid, X_test_valid, y_train_valid, y_test_valid = train_test_split(X, y, test_size=2*pred_size/len(X), random_state=seed, shuffle=False)
         
     model.fit(X_train_valid, y_train_valid, verbose=False)   
 
     preds = model.predict(X_test_valid)   
     mae = mean_absolute_error(y_test_valid, preds)
     res.append(mae)
-    '''
+    
     return np.mean(res) 
 
 def true_select(s):
-    '''
-    highlight the maximum in a Series yellow.
-    '''
+    
     color = 'limegreen' if s =='Відібрана' else 'tomato'
     return 'background-color: %s' % color
-    #return ['background-color: green' if v else '' for v in is_max]
     
 def feature_selection_forward(train_num, y, model, size):
     
-    st.markdown("Всі результати автоматично занесуться до таблиці з відповідними значеннями.")
+    st.markdown("На даному етапі проподиться автоматичний відбір найкорисніших функцій для навчання. **Проводимо це із декількома цілями:**\n- спрощення моделі\n- скорочення тривалості фінального навчання\n- зменшення розмірості даних\n-покращення узагальнення шляхом зниження перенавчання.\nВсі результати автоматично занесуться до таблиці з відповідними значеннями.")
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
     my_table = st.table(check_df)
-    #time.sleep(10)
     
-    train_num = train_num[-size*20:]
-    y = y[-size*20:]
-    #tscv = TimeSeriesSplit(n_splits=12)
+    train_num = train_num[-size*40:]
+    y = y[-size*40:]
     tscv = TimeSeriesSplit(n_splits=3)
     baseline=100000
     train_clear = pd.DataFrame()
@@ -215,15 +202,12 @@ def feature_selection_forward(train_num, y, model, size):
 
         add_df = pd.DataFrame(list(zip(add_rmse, cols)), columns =['MAE', 'Column'])
         add_df=add_df.sort_values(by=['MAE'], ascending=True)
-        print('\n', add_df.head())
         
         if baseline > add_df.iloc[0, 0]:
             baseline = add_df.iloc[0, 0]
             print(add_df.iloc[0, 1])
             train_clear[add_df.iloc[0, 1]] = train_num[add_df.iloc[0, 1]]
-            print(f"MAE: {round(baseline,8)}, num_cols:{len(train_clear.columns)}, cols:{list(train_clear.columns)} \n") 
         else:
-            print('nothing better')
             l = random.sample(list(train_num.columns), len(train_num.columns))
             for i in l:
                 t = 'Не відібрана'
