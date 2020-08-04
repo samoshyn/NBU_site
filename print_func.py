@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf
-import plotly.graph_objects as go
 from statsmodels.tsa.stattools import adfuller
 from PIL import Image
 from ts_model import *
@@ -15,14 +14,11 @@ def print_choose():
 def print_intro():
     st.title("Вступ: коротко про головне")
     st.info("Всі права захищені командою Китобій ")
-    #st.subheader("Підзаголовок Підзаголовок Підзаголовок Підзаголовок ")
     
 def task_info():
     st.title("Про задачу")
-	# Мета
     st.subheader("Мета:")
     st.markdown("Побудова моделі для прогнозування курсу гривні до USD за допомогою машинного навчання")
-	# Вхідні дані
     st.subheader("Вхідні дані:")
     st.markdown("Для вирішення даної задачі були використані дані з відкритих джерел, серед яких \
                 **макроекономічні показники Украни** та **щоденні зніми курсу гривні до USD**")
@@ -42,20 +38,20 @@ def task_info():
     
 def print_command_review():
     st.title("Команда Китобій")
-	# Команда
-    #st.subheader(":")
+    st.subheader("Склад команди")
     st.markdown(":heavy_check_mark: **Цепа Олексій** - КПІ ІПСА 2 курс; Капітан, Data Science, \
                 Data Mining, Feature engineering, Пітч ([LinkedIn](https://www.linkedin.com/in/oleksii-tsepa-9435801a4/))")
     st.markdown(":heavy_check_mark: **Самошин Андрій** - КПІ ІПСА 2 курс; Data Science, ML, \
                 Feature engineering, Презентація ([LinkedIn](https://www.linkedin.com/in/andriy-samoshyn-748b56163/))")
     st.markdown(":heavy_check_mark: **Мисак Юрій** - КПІ ФПМ 2 курс; Data Science, ML, Math, Пітч")
-
+    st.subheader("Ментори")
+    st.markdown(":heavy_check_mark: **Калиновська Людмила Григорівна** – лідер напряму автоматизації банківських операцій")
+    st.markdown(":heavy_check_mark: **Кущ Максим Сергійович** - заступник начальника управління з розробки банківських інформаційних систем НБУ")
 def raw_plot(data, column_name, title):
 
     plt.plot(data.index, data[column_name], label=column_name)
     plt.legend()
     plt.title(title)
-    #plt.show()
 
 def fix_outliers(X, column):
     
@@ -74,8 +70,6 @@ def fix_outliers(X, column):
         
 def print_about_economic_features_model():
     st.subheader("Модель на економічних параметрах України")
-    #st.title("На економічних параметрах України")
-
     st.markdown("Базуючись на макроекономічних показниках країни, необхідно передбачити курс валют на найближчий час. \
                 В даному випадку використовувалась система градієнтного підсилення.")
     data = download_data_economic()
@@ -97,7 +91,6 @@ def print_about_economic_features_model():
     st.pyplot()
     st.markdown("Були додані “запізнення” для усіх колонок на 1,2,3,6 та 12 місяців. Детальніше щодо “запізнення” розкажемо в розділі про часові ряди.")
     st.markdown("**Вибір колонок, що дають найкращий результат.** Використали власноруч створену функцію по відбору найкорисніших колонок для моделювання, адже бустингова модель чутлива до колонок, що знаходяться в датасеті.")
-    #картинка
     image1 = Image.open('diagram.png')
     st.image(image1,use_column_width=True)
     st.markdown("Валідація проводилась на основі **TimeSeriesSplit** із бібліотеки sklearn, щоб перевірити як модель себе показує на всьому датасеті. На діаграмі проілюстрований принцип розбиття на тренуальну та тестову частини.")
@@ -113,25 +106,18 @@ def print_about_economic_features_model():
     
     st.subheader("Результати")
     st.markdown("**То чому ж ми відкинули цей підхід?** Таке рішення довелося прийняти через низку проблем:\n - Більшість параметрів розраховуються щомісячно або щоквартально, а наша ціль, курс валют, щоденно. Будь-які \
-    #                види інтерполяції не змогли повноцінно відобразити тренди параметрів на кожен день\n - На жаль, економічна ситуація у країні не є досить стабільною через що виникає багато аномальних значень, \
-    #                які заважають роботі моделі. Ми могли б їх ліквідувати, однак це реальні показники країни. Якщо всі ці значення прибрати, виникне зовсім інша економічна картина.")
+                    види інтерполяції не змогли повноцінно відобразити тренди параметрів на кожен день\n - На жаль, економічна ситуація у країні не є досить стабільною через що виникає багато аномальних значень, \
+                    які заважають роботі моделі. Ми могли б їх ліквідувати, однак це реальні показники країни. Якщо всі ці значення прибрати, виникне зовсім інша економічна картина.")
     st.markdown("**Як підсумок**, маємо набір даних, який складно якісно математично інтерпретувати на кожен день та який містить \
                 досить велику кількість пропущенної інформації через алгоритми підрахунку.")
     
 def print_about_time_series_model():
     st.subheader("Модель із використанням часових рядів")
     st.info("Часовий ряд - це ряд точок даних, індексованих (або перерахованих) у часовому порядку.")
-	# Література
     st.markdown("Тобто дані організовані за відносно детермінованими часовими позначками і можуть, порівняно із випадковими даними вибірки, містити додаткову інформацію, яку ми можемо проаналізувати. \
                 **У нашому випадку таким рядом є курс гривні до USD.**")
     data = download_data_usd()
     st.line_chart(data)
-    #fig = go.Figure(data=[
-    #go.Bar(name='Cases', x=data.index, y=data)])
-    # Change the bar mode
-    #fig.update_layout(barmode='overlay', title='Worldwide daily Case and Death count')
-    #st.plotly_chart(fig)
-    
     st.markdown("Але, як ми переконались під час вирішення задачі, моделі для часових рядів (ARIMA/SARIMA) не є оптимальними в даному випадку через відсутність \
                 певних закономірностей у часовому ряді курсу гривні. \
                 До того ж, вони не є вигідними с точки зору запуску в продакшен: вимагають багато часу на підготовку даних, потребують частої перепідготовки та \
@@ -150,9 +136,7 @@ def print_about_time_series_model():
     fig, axs = plt.subplots(1, figsize=(6,4))
     for i in range(0, 12, 4):
         data_shift["lag_"+ str(i)] = data.shift(i)
-        #print(data.head())
         axs.plot(data_shift.loc['2019-04-01':'2019-07-01','lag_'+ str(i)], label='lag_'+ str(i))
-    #plt.plot(data_shift.loc['2019-04-01':'2019-07-01',:])
     fig.autofmt_xdate()
     axs.legend()
     fig.suptitle('Приклад запізнення на 4 та 8 днів')
