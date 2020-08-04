@@ -157,9 +157,9 @@ def shap_plots(model, X, y_train):
             plt.clf()
         
         st.markdown("На графіку вище показані значення функцій. Значення SHAP представлені довжиною конкретної смуги. Однак, не зовсім зрозуміло, яке саме значення кожного SHAP _(це можна побачити нижче, якщо потрібно)_:")
-        if st.checkbox('Переглянути всі значення SHAP'):
-            shap_table=pd.DataFrame(shap_values,columns=X.columns)
-            st.table(shap_table.iloc[individual])
+        
+        shap_table=pd.DataFrame(shap_values,columns=X.columns)
+        st.table(shap_table.iloc[individual])
 
 def calc(X,y,model,cv, pred_size):
     res=[]
