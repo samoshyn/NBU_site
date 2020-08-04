@@ -37,8 +37,6 @@ def select_predict():
     select, sеlect_step = select_type_learning(predict_size)
     value = st.button('Отримати прогноз')
     if value:
-        with st.spinner('Очікуйте результати...'):
-            #global y_test, y_train, preds, mae, X_test, X_train, model
             y_test, y_train, preds, mae, X_test, X_train, model = work_model(predict_size, select, sеlect_step)
             print_res(y_test, preds, mae, X_test, predict_size)
             predict_plot(X_train[-4*predict_size:], X_test, preds, y_test)
