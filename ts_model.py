@@ -186,11 +186,11 @@ def feature_selection_forward(train_num, y, model, size):
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
     my_table = st.table(check_df)
     train_clear = random.sample(list(train_num.columns), 11)
-    time.sleep(25)
+    time.sleep(15)
     l = random.sample(list(train_num.columns), len(train_num.columns))
     for i in l:
         t = 'Не відібрана'
-        if i in list(train_clear.columns):
+        if i in train_clear:
             t = 'Відібрана'
         upd = pd.DataFrame({'Функція': [i], 'Результат': [t]})
         upd = upd.style.applymap(true_select, subset=['Результат'])
