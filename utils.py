@@ -44,7 +44,7 @@ def select_predict():
 def select_interp():
     intro_shap()
     predict_size = select_predict_size()
-    if predict_size>=3:
-        with st.spinner('Навчаємо та тренуємо модель...'):
-            y_test, y_train, preds, mae, X_test, X_train, model = work_model(predict_size, "Звичайне навчання", 0, 0)
+    value = st.button('Отримати поясненния прогнозу')
+    if value:
+        y_test, y_train, preds, mae, X_test, X_train, model = work_model(predict_size, "Звичайне навчання", 0, 0)
         shap_plots(model, X_train, y_train)    
