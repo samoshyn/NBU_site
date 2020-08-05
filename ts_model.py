@@ -206,7 +206,7 @@ def work_model(predict_size, select, sеlect_step, fs):
     #                         max_depth=2,min_child_weight=3,
     #                         subsample=0.7,colsample_bytree=0.5, random_state=seed)      
     model = LGBMRegressor(random_state=seed, n_estimators=1000, learning_rate=0.025,
-                           max_depth=7, min_child_weight=1)
+                           max_depth=7, num_leaves=10, min_child_weight=1)
     if (select =="Звичайне навчання"):
         data_usd = data_usd_curr.copy()     
         shift = create_shift(data_usd, [predict_size, predict_size+2, predict_size+4])
