@@ -10,6 +10,9 @@ from statsmodels.tsa.stattools import adfuller
 from sklearn.model_selection import train_test_split, TimeSeriesSplit
 import time
 import random
+from sklearn.feature_selection import RFE, SelectFromModel
+from sklearn.ensemble import RandomForestRegressor
+from lightgbm import LGBMRegressor
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
 pd.set_option('mode.chained_assignment', None)
@@ -77,12 +80,12 @@ def create_shift(s, windows=[7,8,9,10]):
     
     check = cf[f'shift_{windows[0]}']
     for i in range(windows[0]+1, len(s)):
-        if (check[i] > check[i-1]):
+        if (s[i] > s[i-1]):
             
             len_rost = len_rost + 1
             len_spad = 0
             rost_spad.append(len_rost)
-        elif (check[i] <= check[i-1]):
+        elif (s[i] <= s[i-1]):
             
             len_spad = len_spad + 1
             len_rost = 0
@@ -92,7 +95,7 @@ def create_shift(s, windows=[7,8,9,10]):
     
     value = [0] * (windows[0]+1)
     for i in range(windows[0]+1, len(s)):
-        value.append(check[i] - check[i-1])
+        value.append(s[i] - s[i-1])
     cf['day_increase'] = value
     
     return cf
@@ -166,13 +169,23 @@ def true_select(s):
     color = 'limegreen' if s =='Відібрана' else 'tomato'
     return 'background-color: %s' % color
     
-def feature_selection_forward(train_num):
+def feature_selection_forward(train_num, y, predict_size):
+    
+    if (predict_size<=7):
+        lgbm=LGBMRegressor(n_estimators=900, learning_rate=0.05, num_leaves=32, colsample_bytree=0.2,
+        reg_alpha=3, reg_lambda=1, min_split_gain=0.01, min_child_weight=40, random_state=seed)
+    else:
+        lgbm=LGBMRegressor(random_state=seed, n_estimators=100, learning_rate=0.025)
     
     st.markdown("На даному етапі проводиться відбір найкорисніших функцій для навчання. Всі результати автоматично занесуться до таблиці з відповідними значеннями.")
     check_df = pd.DataFrame({}, columns=['Функція', 'Результат'])
-    my_table = st.table(check_df)
-    train_clear = list(train_num.columns.tolist()[i] for i in [0,3,4,5,6,8])
+    with st.spinner('Проводимо відбір функцій...'):
+        embeded_lr_selector = SelectFromModel(lgbm, threshold='median')
+        embeded_lr_selector.fit(train_num, y)
+        embeded_lr_support = embeded_lr_selector.get_support()
+        train_clear = train_num.loc[:,embeded_lr_support].columns.tolist()
     l = random.sample(list(train_num.columns), len(train_num.columns))
+    my_table = st.table(check_df)
     for i in l:
         t = 'Не відібрана'
         if i in train_clear:
@@ -180,7 +193,7 @@ def feature_selection_forward(train_num):
         upd = pd.DataFrame({'Функція': [i], 'Результат': [t]})
         upd = upd.style.applymap(true_select, subset=['Результат'])
         my_table.add_rows(upd)
-        time.sleep(0.5)
+        time.sleep(0.3)
     return train_clear
         
 data_usd_curr = download_data_usd()
@@ -188,10 +201,12 @@ data_usd_curr = download_data_usd()
 
 def work_model(predict_size, select, sеlect_step, fs):
     
-    model = XGBRegressor(eval_metric='mae',
-                             learning_rate=0.05,n_estimators=200,
-                             max_depth=2,min_child_weight=3,
-                             subsample=0.7,colsample_bytree=0.5, random_state=seed)      
+    #model = XGBRegressor(eval_metric='mae',
+    #                         learning_rate=0.05,n_estimators=200,
+    #                         max_depth=2,min_child_weight=3,
+    #                         subsample=0.7,colsample_bytree=0.5, random_state=seed)      
+    model = LGBMRegressor(random_state=seed, n_estimators=1000, learning_rate=0.025,
+                           max_depth=7, min_child_weight=1)
     if (select =="Звичайне навчання"):
         data_usd = data_usd_curr.copy()     
         shift = create_shift(data_usd, [predict_size, predict_size+2, predict_size+4])
@@ -199,12 +214,16 @@ def work_model(predict_size, select, sеlect_step, fs):
 
         X = pd.concat([shift, roll_stats], axis=1)
         y = data_usd.values
-
         X['y'] = y
         X = X.dropna()
         
         X = statictic_info(X, predict_size, [7, 14, 30])
+        #X = X.dropna()
         
+        if (predict_size<=7) or (predict_size>=20):
+            X = X[-1200:]
+        else:
+            X = X[-1500:]
         y = X.y
         X = X.drop(labels=['y'], axis=1)
         X_train = X[:-predict_size]
@@ -212,8 +231,7 @@ def work_model(predict_size, select, sеlect_step, fs):
         y_train = y[:-predict_size]
         y_test = y[-predict_size:]
         if fs=="З відбором":
-            with st.spinner('Проводимо відбір функцій...'):
-                train_clear = feature_selection_forward(X_train)
+            train_clear = feature_selection_forward(X_train, y_train, predict_size)
             X_train = X_train[train_clear]
             X_test = X_test[train_clear]
         with st.spinner('Очікуйте результати...'):
@@ -240,6 +258,7 @@ def work_model(predict_size, select, sеlect_step, fs):
         X['y'] = y
         X = X.dropna()
         X = statictic_info(X, step, [7, 14, 30])
+        X = X[-1200:]
         
         y = X.y
         X = X.drop(labels=['y'], axis=1)
@@ -249,8 +268,7 @@ def work_model(predict_size, select, sеlect_step, fs):
         y_train = y[:-predict_size]
         y_test = y[-predict_size:]
         if fs=="З відбором":
-            with st.spinner('Проводимо відбір функцій...'):
-                train_clear = feature_selection_forward(X_train)
+            train_clear = feature_selection_forward(X_train, y_train, predict_size)
             X_train = X_train[train_clear]
             X_test = X_test[train_clear]
         
