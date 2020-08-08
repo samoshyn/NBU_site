@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from xgboost import XGBRegressor
 import warnings
 import shap
 from sklearn.metrics import mean_absolute_error
